@@ -1,35 +1,62 @@
 # MediFollow AI Care Continuity
 
-中国医疗 AI 随访助手原型：清晰病史。
+An AI care-continuity prototype for patient history summaries, follow-up operations, chronic-care workflows, appointment handoff, and clinical audit trails.
 
-![MediFollow AI Care Continuity preview](./preview.png)
+[Live Demo](https://zhihaohu1996.github.io/medifollow-ai-care-continuity/) · [Repository](https://github.com/Zhihaohu1996/medifollow-ai-care-continuity)
 
-## Why It Matters
+<p align="center">
+  <img src="./assets/screenshots/desktop.png" alt="MediFollow AI desktop care-continuity dashboard" width="760">
+</p>
 
-复诊、慢病随访和检查闭环经常卡在资料不完整、患者忘记预约、医生看不到上下文、合规留痕不清楚。这个原型把患者端病史整理、医生端摘要查看、复诊承接、慢病随访、预约入口和授权审计放在同一个连续服务流程里。
+## Overview
 
-## Highlights
+MediFollow AI Care Continuity explores how hospitals, clinics, and chronic-care teams can connect the gap between patient preparation, doctor review, follow-up reminders, and compliant service operations.
 
-- 患者端：上传材料、生成一页病史摘要、准备问医生清单
-- 医生端：查看 AI 整理摘要、原始材料、指标趋势和安全提醒
-- 复诊运营：应复诊患者、预约完成、检查检验闭环和患者流失预警
-- 慢病随访：异常患者清单、随访问卷、任务分配和科室看板
-- 合规边界明确：不自动生成诊断、处方或治疗建议，医生确认后才可引用
+The prototype includes both patient-facing and clinician-facing views. Patients prepare visit materials and generate a one-page history summary. Clinicians review AI-organized context, original source materials, safety reminders, follow-up queues, and audit records.
 
-## Demo
+## Key Features
 
-Open `index.html` in a browser, or publish this repository with GitHub Pages.
+- Patient-side visit preparation and document upload flow
+- One-page history summary for doctor review
+- Doctor-side AI summary with original material traceability
+- Follow-up and revisit operations dashboard
+- Chronic-care queue with abnormal-patient prioritization
+- Appointment handoff for follow-up visits and recommended checks
+- Compliance-first design: no automatic diagnosis, prescription, or treatment decision
 
-## Project Team
+## Screenshots
 
-This project was co-created by DanXian and Codex.
+<p align="center">
+  <img src="./assets/screenshots/desktop.png" alt="MediFollow desktop workflow" width="680">
+  <br>
+  <img src="./assets/screenshots/mobile.png" alt="MediFollow mobile patient view" width="260">
+</p>
 
-制作人员：
+## Who It Is For
 
-- DanXian: product direction, healthcare workflow framing, and collaboration
-- Codex: AI-assisted prototyping, frontend implementation, and README preparation
+- Healthcare product teams exploring AI-assisted follow-up workflows
+- Clinics and hospitals designing patient continuity services
+- Chronic-care teams managing revisit and monitoring queues
+- Builders interested in compliant AI healthcare UX patterns
 
-## Suggested Topics
+## Project Status
 
-`ai-healthcare`, `patient-followup`, `care-continuity`, `chronic-care`, `medical-prototype`, `github-pages`
+This is a high-fidelity static prototype for product exploration, demo conversations, and workflow validation. It does not provide medical advice.
 
+## Roadmap Ideas
+
+- Add role-based accounts for patient, doctor, nurse, and admin views
+- Connect structured patient timelines to a backend database
+- Add consent management and audit-log export
+- Add configurable follow-up templates by department
+- Add integration stubs for appointment systems and patient portals
+
+## Team And Contributions
+
+- Zhihao Hu: project owner, product vision, healthcare workflow framing, follow-up business model thinking, compliance boundary definition, feature prioritization, and final project direction
+- DanXian: collaborator, healthcare scenario discussion, user-flow feedback, and product refinement
+- Codex: AI-assisted implementation support, static frontend assembly, README formatting, and screenshot preparation
+
+## License
+
+MIT License. See [LICENSE](./LICENSE).
