@@ -1,0 +1,2067 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>清晰病史 - AI 就诊准备助手原型</title>
+  <style>
+    :root {
+      --bg: #eef3f6;
+      --surface: #ffffff;
+      --surface-soft: #f6f9fb;
+      --ink: #102029;
+      --muted: #657681;
+      --line: #dbe5ea;
+      --brand: #127c89;
+      --brand-dark: #0b5f6d;
+      --accent: #e77843;
+      --green: #28a26f;
+      --red: #cf4f4f;
+      --yellow: #f1bc45;
+      --shadow: 0 24px 70px rgba(20, 55, 71, 0.16);
+      --radius: 8px;
+      font-family: "Microsoft YaHei", "PingFang SC", "Segoe UI", Arial, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      min-width: 0;
+    }
+
+    html {
+      overflow-x: hidden;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--ink);
+      background:
+        linear-gradient(120deg, rgba(18, 124, 137, 0.10), rgba(231, 120, 67, 0.06)),
+        var(--bg);
+      overflow-x: hidden;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      cursor: pointer;
+    }
+
+    .shell {
+      width: min(1360px, calc(100vw - 32px));
+      margin: 0 auto;
+      padding: 22px 0;
+      display: grid;
+      grid-template-columns: 430px minmax(0, 1fr);
+      gap: 18px;
+      align-items: stretch;
+    }
+
+    .phone {
+      width: 100%;
+      max-width: 430px;
+      height: calc(100vh - 44px);
+      min-height: 760px;
+      background: #101820;
+      border: 1px solid rgba(255,255,255,0.30);
+      border-radius: 30px;
+      padding: 12px;
+      box-shadow: var(--shadow);
+      position: sticky;
+      top: 22px;
+    }
+
+    .phone-screen {
+      height: 100%;
+      background: var(--surface-soft);
+      border-radius: 22px;
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    .status {
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 18px;
+      font-size: 12px;
+      color: #22323a;
+      background: var(--surface);
+    }
+
+    .signal {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .bar {
+      width: 4px;
+      border-radius: 4px;
+      background: #22323a;
+    }
+
+    .bar:nth-child(1) { height: 5px; opacity: .5; }
+    .bar:nth-child(2) { height: 8px; opacity: .7; }
+    .bar:nth-child(3) { height: 11px; }
+
+    .app-header {
+      padding: 14px 18px 12px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .identity {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+
+    .avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: #d9f0ee;
+      color: var(--brand-dark);
+      font-weight: 800;
+      flex: 0 0 auto;
+    }
+
+    .identity strong,
+    .identity span {
+      display: block;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .summary-hero p,
+    .field p,
+    .source p,
+    .alert p {
+      overflow-wrap: anywhere;
+    }
+
+    .identity strong {
+      font-size: 17px;
+    }
+
+    .identity span {
+      margin-top: 2px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .icon-button {
+      width: 38px;
+      height: 38px;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      background: var(--surface);
+      color: var(--ink);
+      display: grid;
+      place-items: center;
+      flex: 0 0 auto;
+    }
+
+    .icon {
+      width: 19px;
+      height: 19px;
+      stroke: currentColor;
+      fill: none;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .app-main {
+      overflow: auto;
+      overflow-x: hidden;
+      padding: 16px 14px 18px;
+      scrollbar-width: none;
+    }
+
+    .app-main::-webkit-scrollbar {
+      width: 0;
+      height: 0;
+    }
+
+    .screen {
+      display: none;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    .summary-hero {
+      color: #fff;
+      background:
+        linear-gradient(135deg, rgba(18,124,137,.98), rgba(11,95,109,.96)),
+        #127c89;
+      border-radius: var(--radius);
+      padding: 16px;
+      box-shadow: 0 14px 28px rgba(18, 124, 137, 0.22);
+    }
+
+    .summary-hero h1 {
+      margin: 0;
+      font-size: 24px;
+      line-height: 1.2;
+      letter-spacing: 0;
+    }
+
+    .summary-hero p {
+      margin: 9px 0 0;
+      color: rgba(255,255,255,.82);
+      line-height: 1.45;
+      font-size: 13px;
+    }
+
+    .hero-actions {
+      display: grid;
+      grid-template-columns: 1fr 44px;
+      gap: 10px;
+      margin-top: 15px;
+    }
+
+    .primary-button,
+    .secondary-button,
+    .ghost-button {
+      border: 0;
+      border-radius: var(--radius);
+      min-height: 44px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 14px;
+      font-weight: 700;
+    }
+
+    .primary-button {
+      background: var(--brand);
+      color: #fff;
+    }
+
+    .secondary-button {
+      background: #fff;
+      color: var(--brand-dark);
+    }
+
+    .ghost-button {
+      background: var(--surface-soft);
+      color: var(--ink);
+      border: 1px solid var(--line);
+    }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 14px;
+      margin-top: 12px;
+    }
+
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    .section-title small {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      border-radius: 999px;
+      background: #edf4f5;
+      color: #28535c;
+      padding: 7px 10px;
+      font-size: 12px;
+      border: 1px solid #d3e5e8;
+      white-space: nowrap;
+    }
+
+    .chip.warn {
+      color: #874d15;
+      background: #fff4df;
+      border-color: #f5d59a;
+    }
+
+    .chip.danger {
+      color: #8c3434;
+      background: #fff0ef;
+      border-color: #efc4c1;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .readiness {
+      display: grid;
+      gap: 9px;
+    }
+
+    .step-row {
+      display: grid;
+      grid-template-columns: 28px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      padding: 9px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface-soft);
+    }
+
+    .step-mark {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: #dff1ef;
+      color: var(--brand-dark);
+      font-weight: 900;
+      font-size: 13px;
+    }
+
+    .step-row.pending .step-mark {
+      background: #fff4df;
+      color: #874d15;
+    }
+
+    .step-row strong {
+      display: block;
+      font-size: 13px;
+    }
+
+    .step-row span {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.35;
+    }
+
+    .step-row small {
+      color: var(--muted);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .question-list {
+      display: grid;
+      gap: 8px;
+      counter-reset: question;
+    }
+
+    .question {
+      display: grid;
+      grid-template-columns: 26px 1fr;
+      gap: 8px;
+      align-items: start;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface-soft);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    .question::before {
+      counter-increment: question;
+      content: counter(question);
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: #fff;
+      background: var(--brand);
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    .appointment-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 9px;
+      margin-top: 12px;
+    }
+
+    .booking-grid {
+      display: grid;
+      gap: 10px;
+    }
+
+    .booking-card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 12px;
+      background: var(--surface-soft);
+    }
+
+    .booking-card strong {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 14px;
+      line-height: 1.35;
+    }
+
+    .booking-card p {
+      margin: 7px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .booking-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 9px;
+    }
+
+    .booking-meta span {
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--muted);
+      padding: 5px 8px;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .slot-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .slot {
+      border: 1px solid #cfe1e5;
+      border-radius: var(--radius);
+      background: #fff;
+      color: var(--brand-dark);
+      min-height: 38px;
+      font-weight: 700;
+    }
+
+    .partner-label {
+      color: var(--brand-dark);
+      background: #e6f2f2;
+      border: 1px solid #cfe1e5;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .disclosure {
+      margin-top: 10px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .metric {
+      min-height: 92px;
+      border-radius: var(--radius);
+      background: var(--surface-soft);
+      border: 1px solid var(--line);
+      padding: 11px;
+    }
+
+    .metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .metric strong {
+      display: block;
+      margin-top: 7px;
+      font-size: 21px;
+      line-height: 1.1;
+    }
+
+    .metric small {
+      display: block;
+      margin-top: 6px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .timeline {
+      display: grid;
+      gap: 10px;
+    }
+
+    .timeline-item {
+      display: grid;
+      grid-template-columns: 88px 1fr;
+      gap: 10px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .timeline-item:last-child {
+      padding-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .timeline-item time {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+    }
+
+    .timeline-item strong {
+      display: block;
+      font-size: 13px;
+      line-height: 1.4;
+    }
+
+    .timeline-item p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 12px;
+    }
+
+    .upload-zone {
+      border: 1.5px dashed #b5cbd1;
+      background: #f8fbfc;
+      border-radius: var(--radius);
+      min-height: 150px;
+      padding: 16px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+    }
+
+    .upload-zone strong {
+      display: block;
+      font-size: 15px;
+      margin-top: 8px;
+    }
+
+    .upload-zone span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 5px;
+      line-height: 1.45;
+    }
+
+    .doc-list {
+      display: grid;
+      gap: 9px;
+      margin-top: 12px;
+    }
+
+    .doc-row {
+      display: grid;
+      grid-template-columns: 36px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--surface);
+      padding: 9px;
+    }
+
+    .doc-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      color: var(--brand-dark);
+      background: #dff1ef;
+    }
+
+    .doc-row strong {
+      display: block;
+      font-size: 13px;
+    }
+
+    .doc-row span {
+      display: block;
+      margin-top: 3px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .progress {
+      width: 46px;
+      height: 8px;
+      border-radius: 999px;
+      background: #d9e5e8;
+      overflow: hidden;
+    }
+
+    .progress i {
+      display: block;
+      height: 100%;
+      background: var(--green);
+      border-radius: inherit;
+    }
+
+    .summary-block {
+      display: grid;
+      gap: 10px;
+    }
+
+    .field {
+      border: 1px solid var(--line);
+      background: var(--surface-soft);
+      border-radius: var(--radius);
+      padding: 10px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .field p {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    .consent {
+      display: grid;
+      gap: 10px;
+    }
+
+    .switch-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 12px;
+      align-items: center;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 12px;
+      background: var(--surface-soft);
+    }
+
+    .switch-row strong {
+      display: block;
+      font-size: 14px;
+    }
+
+    .switch-row span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.4;
+      margin-top: 3px;
+    }
+
+    .toggle {
+      width: 48px;
+      height: 28px;
+      border: 0;
+      border-radius: 999px;
+      background: #c8d5da;
+      padding: 3px;
+      transition: .2s ease;
+    }
+
+    .toggle i {
+      display: block;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #fff;
+      transition: .2s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,.18);
+    }
+
+    .toggle.on {
+      background: var(--brand);
+    }
+
+    .toggle.on i {
+      transform: translateX(20px);
+    }
+
+    .qr-card {
+      text-align: center;
+    }
+
+    .qr {
+      width: 164px;
+      height: 164px;
+      margin: 10px auto 12px;
+      border-radius: var(--radius);
+      background:
+        linear-gradient(90deg, #111 12px, transparent 12px) 0 0 / 24px 24px,
+        linear-gradient(#111 12px, transparent 12px) 0 0 / 24px 24px,
+        #fff;
+      border: 12px solid #fff;
+      box-shadow: 0 0 0 1px var(--line);
+      position: relative;
+    }
+
+    .qr::before,
+    .qr::after {
+      content: "";
+      position: absolute;
+      width: 42px;
+      height: 42px;
+      background: #fff;
+      border: 10px solid #111;
+    }
+
+    .qr::before {
+      left: 4px;
+      top: 4px;
+    }
+
+    .qr::after {
+      right: 4px;
+      bottom: 4px;
+    }
+
+    .share-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--brand-dark);
+      font-weight: 700;
+      font-size: 13px;
+    }
+
+    .bottom-nav {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      background: var(--surface);
+      border-top: 1px solid var(--line);
+      padding: 7px 8px 10px;
+    }
+
+    .nav-button {
+      min-height: 54px;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      display: grid;
+      place-items: center;
+      gap: 3px;
+      font-size: 11px;
+      border-radius: var(--radius);
+    }
+
+    .nav-button.active {
+      color: var(--brand-dark);
+      background: #e6f2f2;
+    }
+
+    .doctor-panel {
+      min-width: 0;
+      min-height: calc(100vh - 44px);
+      background: rgba(255,255,255,.74);
+      border: 1px solid rgba(255,255,255,.65);
+      border-radius: 18px;
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      backdrop-filter: blur(18px);
+    }
+
+    .doctor-top {
+      min-height: 76px;
+      padding: 16px 18px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+    }
+
+    .doctor-top h2 {
+      margin: 0;
+      font-size: 21px;
+      letter-spacing: 0;
+    }
+
+    .doctor-top p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .segmented {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      border: 1px solid var(--line);
+      background: var(--surface-soft);
+      border-radius: var(--radius);
+      padding: 4px;
+      flex: 0 0 auto;
+    }
+
+    .segment {
+      border: 0;
+      border-radius: 6px;
+      background: transparent;
+      min-height: 34px;
+      padding: 0 12px;
+      color: var(--muted);
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .segment.active {
+      background: var(--surface);
+      color: var(--brand-dark);
+      box-shadow: 0 2px 10px rgba(29, 60, 73, 0.08);
+    }
+
+    .doctor-main {
+      padding: 18px;
+      overflow: auto;
+      display: block;
+      scrollbar-width: thin;
+    }
+
+    .doctor-view {
+      display: none;
+    }
+
+    .doctor-view.active {
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(320px, .9fr);
+      gap: 16px;
+      align-content: start;
+    }
+
+    .work-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 16px;
+    }
+
+    .patient-strip {
+      display: grid;
+      grid-template-columns: 52px 1fr auto;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+
+    .large-avatar {
+      width: 52px;
+      height: 52px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: #d9f0ee;
+      color: var(--brand-dark);
+      font-size: 20px;
+      font-weight: 800;
+    }
+
+    .patient-strip strong {
+      display: block;
+      font-size: 18px;
+    }
+
+    .patient-strip span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .risk-badge {
+      color: #874d15;
+      background: #fff4df;
+      border: 1px solid #f5d59a;
+      border-radius: 999px;
+      padding: 8px 11px;
+      font-weight: 800;
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .doctor-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .doctor-metric {
+      background: var(--surface-soft);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 12px;
+      min-height: 86px;
+    }
+
+    .doctor-metric span {
+      display: block;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .doctor-metric strong {
+      display: block;
+      margin-top: 7px;
+      font-size: 19px;
+    }
+
+    .source-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .source {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 12px;
+      background: var(--surface-soft);
+    }
+
+    .source strong {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 14px;
+    }
+
+    .source p {
+      margin: 7px 0 0;
+      color: var(--muted);
+      line-height: 1.5;
+      font-size: 13px;
+    }
+
+    .verified {
+      color: var(--green);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+
+    .action-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .table {
+      display: grid;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+
+    .table-row {
+      display: grid;
+      grid-template-columns: 1.1fr .8fr .8fr;
+      gap: 8px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--line);
+      font-size: 13px;
+      background: #fff;
+    }
+
+    .table-row:last-child {
+      border-bottom: 0;
+    }
+
+    .table-row.header {
+      background: var(--surface-soft);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .mini-board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .mini-board .doctor-metric {
+      min-height: 74px;
+    }
+
+    .audit-event {
+      display: grid;
+      grid-template-columns: 96px 1fr;
+      gap: 12px;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .audit-event:last-child {
+      border-bottom: 0;
+    }
+
+    .audit-event time {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .audit-event strong {
+      display: block;
+      font-size: 14px;
+    }
+
+    .audit-event p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .alert-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .alert {
+      display: grid;
+      grid-template-columns: 10px 1fr;
+      gap: 10px;
+      align-items: start;
+      padding: 12px;
+      background: var(--surface-soft);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+    }
+
+    .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-top: 5px;
+      background: var(--yellow);
+    }
+
+    .dot.red {
+      background: var(--red);
+    }
+
+    .alert strong {
+      display: block;
+      font-size: 13px;
+    }
+
+    .alert p {
+      margin: 4px 0 0;
+      color: var(--muted);
+      line-height: 1.45;
+      font-size: 12px;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 26px;
+      transform: translate(-50%, 20px);
+      opacity: 0;
+      background: #102029;
+      color: #fff;
+      padding: 11px 16px;
+      border-radius: 999px;
+      box-shadow: 0 18px 40px rgba(0,0,0,.18);
+      transition: .25s ease;
+      pointer-events: none;
+      z-index: 20;
+      font-size: 13px;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translate(-50%, 0);
+    }
+
+    @media (max-width: 980px) {
+      .shell {
+        grid-template-columns: 1fr;
+        width: min(620px, calc(100vw - 20px));
+        padding: 10px 0 18px;
+      }
+
+      .phone {
+        position: static;
+        max-width: none;
+        min-width: 0;
+        height: auto;
+        min-height: 790px;
+      }
+
+      .doctor-panel {
+        min-height: auto;
+        min-width: 0;
+      }
+
+      .doctor-view.active {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .shell {
+        display: block;
+        width: min(100vw, 390px);
+        max-width: 390px;
+        margin: 0;
+        padding: 0;
+        overflow-x: hidden;
+      }
+
+      .phone {
+        width: 100%;
+        max-width: 100vw;
+        border-radius: 0;
+        padding: 0;
+        height: 100vh;
+        min-height: 720px;
+      }
+
+      .phone-screen {
+        border-radius: 0;
+      }
+
+      .doctor-panel {
+        border-radius: 0;
+      }
+
+      .doctor-top {
+        display: grid;
+        min-width: 0;
+      }
+
+      .segmented {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        overflow: auto;
+      }
+
+      .doctor-grid,
+      .action-grid,
+      .appointment-actions,
+      .mini-board,
+      .metric-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .patient-strip {
+        grid-template-columns: 52px 1fr;
+      }
+
+      .risk-badge {
+        grid-column: 1 / -1;
+        justify-self: start;
+      }
+    }
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"></path><path d="M13.7 21a2 2 0 0 1-3.4 0"></path></symbol>
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7"></path><path d="M5 10v10h14V10"></path><path d="M9 20v-6h6v6"></path></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 3v12"></path><path d="m7 8 5-5 5 5"></path><path d="M5 21h14"></path></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><path d="M14 2v6h6"></path><path d="M8 13h8"></path><path d="M8 17h5"></path></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><path d="M4 12v8h16v-8"></path><path d="M12 16V3"></path><path d="m7 8 5-5 5 5"></path></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><path d="M20 21a8 8 0 0 0-16 0"></path><circle cx="12" cy="7" r="4"></circle></symbol>
+    <symbol id="i-scan" viewBox="0 0 24 24"><path d="M4 7V5a1 1 0 0 1 1-1h2"></path><path d="M17 4h2a1 1 0 0 1 1 1v2"></path><path d="M20 17v2a1 1 0 0 1-1 1h-2"></path><path d="M7 20H5a1 1 0 0 1-1-1v-2"></path><path d="M7 12h10"></path></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"></path></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"></path><path d="m9 12 2 2 4-5"></path></symbol>
+    <symbol id="i-heart" viewBox="0 0 24 24"><path d="M19 14c1.5-1.4 3-3.3 3-5.5A5.5 5.5 0 0 0 12 5a5.5 5.5 0 0 0-10 3.5c0 2.2 1.5 4.1 3 5.5l7 7z"></path></symbol>
+  </svg>
+
+  <div class="shell">
+    <section class="phone" aria-label="患者端原型">
+      <div class="phone-screen">
+        <div class="status">
+          <strong>16:38</strong>
+          <div class="signal" aria-hidden="true">
+            <i class="bar"></i><i class="bar"></i><i class="bar"></i>
+          </div>
+        </div>
+
+        <header class="app-header">
+          <div class="identity">
+            <div class="avatar">周</div>
+            <div>
+              <strong>清晰病史</strong>
+              <span>就诊前资料包已更新</span>
+            </div>
+          </div>
+          <button class="icon-button" type="button" title="提醒">
+            <svg class="icon"><use href="#i-bell"></use></svg>
+          </button>
+        </header>
+
+        <main class="app-main">
+          <section class="screen active" data-screen="home">
+            <div class="summary-hero">
+              <h1>周女士的本次就诊摘要</h1>
+              <p>AI 已整理 14 份材料，医生扫码后可查看摘要与原始来源。所有诊疗判断仍由医生完成。</p>
+              <div class="hero-actions">
+                <button class="secondary-button" type="button" data-go="share">
+                  <svg class="icon"><use href="#i-share"></use></svg>
+                  授权给医生查看
+                </button>
+                <button class="secondary-button" type="button" data-go="booking" title="预约服务">
+                  <svg class="icon"><use href="#i-home"></use></svg>
+                </button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="section-title">
+                <h2>就诊准备进度</h2>
+                <small>3/4 已完成</small>
+              </div>
+              <div class="readiness">
+                <div class="step-row">
+                  <div class="step-mark">✓</div>
+                  <div><strong>关键病史已整理</strong><span>诊断、用药、过敏史、住院记录已归档。</span></div>
+                  <small>已完成</small>
+                </div>
+                <div class="step-row">
+                  <div class="step-mark">✓</div>
+                  <div><strong>近期指标已同步</strong><span>血压、血糖与糖化血红蛋白已生成趋势。</span></div>
+                  <small>已完成</small>
+                </div>
+                <div class="step-row pending">
+                  <div class="step-mark">!</div>
+                  <div><strong>建议补充肾功能报告</strong><span>用于医生复核糖尿病长期用药安全性。</span></div>
+                  <small>待补充</small>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="section-title">
+                <h2>复诊与检查闭环</h2>
+                <small>医生确认后生效</small>
+              </div>
+              <div class="readiness">
+                <div class="step-row">
+                  <div class="step-mark">1</div>
+                  <div><strong>6 月 08 日前补充肾功能报告</strong><span>上传后自动整理异常项，医生可查看原始报告。</span></div>
+                  <small>待上传</small>
+                </div>
+                <div class="step-row">
+                  <div class="step-mark">2</div>
+                  <div><strong>6 月 12 日内分泌复诊</strong><span>携带一页病史卡，减少重复问诊和漏带资料。</span></div>
+                  <small>可预约</small>
+                </div>
+                <div class="step-row">
+                  <div class="step-mark">3</div>
+                  <div><strong>复诊后 30 天随访</strong><span>记录血糖、血压和用药依从性，异常时提醒医护处理。</span></div>
+                  <small>计划中</small>
+                </div>
+              </div>
+              <div class="appointment-actions">
+                <button class="primary-button" type="button" data-go="booking">
+                  <svg class="icon"><use href="#i-home"></use></svg>
+                  预约复诊
+                </button>
+                <button class="ghost-button" type="button" data-go="booking">
+                  <svg class="icon"><use href="#i-scan"></use></svg>
+                  找附近医院
+                </button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="section-title">
+                <h2>医生先看这些</h2>
+                <small>AI 整理</small>
+              </div>
+              <div class="chips">
+                <span class="chip">2 型糖尿病 8 年</span>
+                <span class="chip">高血压 5 年</span>
+                <span class="chip warn">近 30 天血糖波动</span>
+                <span class="chip danger">青霉素过敏</span>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="section-title">
+                <h2>近期指标</h2>
+                <small>来自患者记录</small>
+              </div>
+              <div class="metric-grid">
+                <div class="metric">
+                  <span>空腹血糖均值</span>
+                  <strong>8.1</strong>
+                  <small>mmol/L，较上月 +0.7</small>
+                </div>
+                <div class="metric">
+                  <span>血压均值</span>
+                  <strong>138/86</strong>
+                  <small>mmHg，近 7 天偏高</small>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="section-title">
+                <h2>病史时间线</h2>
+                <small>可追溯来源</small>
+              </div>
+              <div class="timeline">
+                <div class="timeline-item">
+                  <time>2026-05-22<br>检验</time>
+                  <div>
+                    <strong>糖化血红蛋白 7.8%</strong>
+                    <p>来源：仁安医院检验报告。建议就诊时携带原始报告。</p>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <time>2026-04-18<br>门诊</time>
+                  <div>
+                    <strong>调整降压药后仍有晨间血压偏高</strong>
+                    <p>来源：患者上传处方与家庭血压记录。</p>
+                  </div>
+                </div>
+                <div class="timeline-item">
+                  <time>2025-11-03<br>住院</time>
+                  <div>
+                    <strong>肺部感染住院 6 天，已好转出院</strong>
+                    <p>来源：出院小结，未见长期氧疗记录。</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="section-title">
+                <h2>本次想问医生</h2>
+                <small>可编辑</small>
+              </div>
+              <div class="question-list">
+                <div class="question">近 1 个月空腹血糖升高，是否和饮食、药物依从性或感染恢复有关？</div>
+                <div class="question">目前降糖药和降压药是否需要调整，是否需要先复查肾功能？</div>
+                <div class="question">晨间血压偏高时，家庭监测频率和复诊时间应该如何安排？</div>
+              </div>
+            </div>
+          </section>
+
+          <section class="screen" data-screen="upload">
+            <div class="card">
+              <div class="section-title">
+                <h2>上传就诊材料</h2>
+                <small>拍照或导入</small>
+              </div>
+              <button class="upload-zone" type="button" id="addDoc">
+                <svg class="icon" style="width:32px;height:32px;color:var(--brand-dark)"><use href="#i-upload"></use></svg>
+                <strong>添加报告、处方或出院小结</strong>
+                <span>AI 只做识别、归类和摘要；医生可查看原始图片。</span>
+              </button>
+              <div class="doc-list" id="docList">
+                <div class="doc-row">
+                  <div class="doc-icon"><svg class="icon"><use href="#i-file"></use></svg></div>
+                  <div><strong>2026-05 糖化血红蛋白报告</strong><span>已识别 6 项指标</span></div>
+                  <div class="progress"><i style="width:100%"></i></div>
+                </div>
+                <div class="doc-row">
+                  <div class="doc-icon"><svg class="icon"><use href="#i-file"></use></svg></div>
+                  <div><strong>2025-11 出院小结</strong><span>已提取诊断、用药、复查计划</span></div>
+                  <div class="progress"><i style="width:100%"></i></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="section-title">
+                <h2>AI 归档范围</h2>
+                <small>本地模板</small>
+              </div>
+              <div class="chips">
+                <span class="chip">检查检验</span>
+                <span class="chip">出院小结</span>
+                <span class="chip">处方用药</span>
+                <span class="chip">过敏史</span>
+                <span class="chip">家庭指标</span>
+              </div>
+            </div>
+          </section>
+
+          <section class="screen" data-screen="summary">
+            <div class="card">
+              <div class="section-title">
+                <h2>一页病史摘要</h2>
+                <small>就诊前版本</small>
+              </div>
+              <div class="summary-block">
+                <div class="field">
+                  <label>主诉</label>
+                  <p>近 1 个月空腹血糖偏高，晨起血压偶有升高，准备内分泌科复诊。</p>
+                </div>
+                <div class="field">
+                  <label>既往史</label>
+                  <p>2 型糖尿病约 8 年，高血压约 5 年；2025 年 11 月因肺部感染住院。</p>
+                </div>
+                <div class="field">
+                  <label>长期用药</label>
+                  <p>二甲双胍、达格列净、氨氯地平。具体剂量来自患者上传处方，需医生复核。</p>
+                </div>
+                <div class="field">
+                  <label>就诊时建议确认</label>
+                  <p>近期血糖波动原因、是否需要复查肾功能、晨间血压控制目标、药物不良反应。</p>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          <section class="screen" data-screen="share">
+            <div class="card">
+              <div class="section-title">
+                <h2>授权医生查看</h2>
+                <small>24 小时有效</small>
+              </div>
+              <div class="consent">
+                <div class="switch-row">
+                  <div>
+                    <strong>允许查看 AI 摘要</strong>
+                    <span>包含病史、用药、过敏史、近期指标。</span>
+                  </div>
+                  <button class="toggle on" type="button" aria-label="允许查看 AI 摘要"><i></i></button>
+                </div>
+                <div class="switch-row">
+                  <div>
+                    <strong>允许查看原始材料</strong>
+                    <span>医生可打开患者上传的报告图片。</span>
+                  </div>
+                  <button class="toggle on" type="button" aria-label="允许查看原始材料"><i></i></button>
+                </div>
+                <div class="switch-row">
+                  <div>
+                    <strong>允许留存本次阅览记录</strong>
+                    <span>用于问诊质控和访问审计。</span>
+                  </div>
+                  <button class="toggle" type="button" aria-label="允许留存本次阅览记录"><i></i></button>
+                </div>
+              </div>
+            </div>
+
+            <div class="card qr-card">
+              <div class="section-title">
+                <h2>给医生扫码</h2>
+                <small>可撤回</small>
+              </div>
+              <div class="qr" aria-label="授权二维码"></div>
+              <div class="share-link">
+                <svg class="icon"><use href="#i-shield"></use></svg>
+                授权码 QX-260530
+              </div>
+            </div>
+          </section>
+
+          <section class="screen" data-screen="booking">
+            <div class="card">
+              <div class="section-title">
+                <h2>智能预约与复诊承接</h2>
+                <small>下一步医疗服务</small>
+              </div>
+              <div class="summary-block">
+                <div class="field">
+                  <label>基于当前病史卡</label>
+                  <p>建议优先完成肾功能复查，并在 6 月 12 日前预约内分泌复诊。系统仅做服务承接与提醒，不替代医生判断。</p>
+                </div>
+              </div>
+              <div class="appointment-actions">
+                <button class="primary-button" type="button" data-toast="已进入内分泌复诊预约流程">
+                  <svg class="icon"><use href="#i-home"></use></svg>
+                  预约复诊
+                </button>
+                <button class="ghost-button" type="button" data-toast="已筛选可预约肾功能检查的机构">
+                  <svg class="icon"><use href="#i-scan"></use></svg>
+                  预约检查
+                </button>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="section-title">
+                <h2>推荐可预约机构</h2>
+                <small>距离 + 科室匹配</small>
+              </div>
+              <div class="booking-grid">
+                <div class="booking-card">
+                  <strong>仁安医院内分泌科 <span class="partner-label">合作机构</span></strong>
+                  <p>距您 2.4 km，可承接糖尿病复诊、肾功能复查和 30 天随访计划。</p>
+                  <div class="booking-meta">
+                    <span>三甲综合</span><span>最快今日</span><span>支持报告上传</span>
+                  </div>
+                  <div class="slot-list">
+                    <button class="slot" type="button" data-toast="已选择仁安医院 6 月 12 日上午号源">6/12 上午</button>
+                    <button class="slot" type="button" data-toast="已选择仁安医院 6 月 13 日下午号源">6/13 下午</button>
+                  </div>
+                </div>
+                <div class="booking-card">
+                  <strong>社区卫生服务中心慢病门诊</strong>
+                  <p>距您 1.1 km，适合家庭血压血糖记录复核、慢病随访和基础检查预约。</p>
+                  <div class="booking-meta">
+                    <span>附近机构</span><span>家庭医生</span><span>慢病随访</span>
+                  </div>
+                  <div class="slot-list">
+                    <button class="slot" type="button" data-toast="已选择社区慢病门诊 6 月 08 日下午">6/08 下午</button>
+                    <button class="slot" type="button" data-toast="已选择社区慢病门诊 6 月 10 日上午">6/10 上午</button>
+                  </div>
+                </div>
+                <div class="booking-card">
+                  <strong>明康互联网医院 <span class="partner-label">线上复诊</span></strong>
+                  <p>适合已有明确诊断的复诊咨询，医生确认后可给出后续线下检查或复诊建议。</p>
+                  <div class="booking-meta">
+                    <span>图文问诊</span><span>病史卡预填</span><span>医生确认</span>
+                  </div>
+                  <div class="slot-list">
+                    <button class="slot" type="button" data-toast="已选择今日 19:00 线上复诊">今日 19:00</button>
+                    <button class="slot" type="button" data-toast="已选择明日 10:30 线上复诊">明日 10:30</button>
+                  </div>
+                </div>
+              </div>
+              <p class="disclosure">合作机构会明确标注；排序参考距离、科室匹配、可预约时间和患者选择，不按诊疗结论自动推荐。</p>
+            </div>
+          </section>
+        </main>
+
+        <nav class="bottom-nav" aria-label="患者端导航">
+          <button class="nav-button active" type="button" data-go="home">
+            <svg class="icon"><use href="#i-home"></use></svg>
+            首页
+          </button>
+          <button class="nav-button" type="button" data-go="upload">
+            <svg class="icon"><use href="#i-upload"></use></svg>
+            上传
+          </button>
+          <button class="nav-button" type="button" data-go="summary">
+            <svg class="icon"><use href="#i-file"></use></svg>
+            摘要
+          </button>
+          <button class="nav-button" type="button" data-go="booking">
+            <svg class="icon"><use href="#i-scan"></use></svg>
+            预约
+          </button>
+          <button class="nav-button" type="button" data-go="share">
+            <svg class="icon"><use href="#i-share"></use></svg>
+            授权
+          </button>
+        </nav>
+      </div>
+    </section>
+
+    <section class="doctor-panel" aria-label="医生端工作台">
+      <header class="doctor-top">
+        <div>
+          <h2>AI 患者连续服务平台</h2>
+          <p>病史卡、复诊承接、慢病随访和合规留痕一体化；不生成诊断或处方。</p>
+        </div>
+        <div class="segmented" role="tablist" aria-label="工作台视图">
+          <button class="segment active" type="button" data-doctor-view="visit">本次阅诊</button>
+          <button class="segment" type="button" data-doctor-view="growth">复诊运营</button>
+          <button class="segment" type="button" data-doctor-view="follow">慢病随访</button>
+          <button class="segment" type="button" data-doctor-view="audit">合规留痕</button>
+        </div>
+      </header>
+
+      <main class="doctor-main">
+        <section class="doctor-view active" data-doctor-panel="visit">
+        <div>
+          <div class="work-card">
+            <div class="patient-strip">
+              <div class="large-avatar">周</div>
+              <div>
+                <strong>周女士，56 岁</strong>
+                <span>内分泌复诊 · 患者授权 16:34 · 24 小时有效</span>
+              </div>
+              <div class="risk-badge">需复核：血糖波动</div>
+            </div>
+
+            <div class="doctor-grid">
+              <div class="doctor-metric"><span>资料完整度</span><strong>82%</strong></div>
+              <div class="doctor-metric"><span>近 30 天记录</span><strong>26 条</strong></div>
+              <div class="doctor-metric"><span>原始来源</span><strong>14 份</strong></div>
+            </div>
+          </div>
+
+          <div class="work-card" style="margin-top:14px">
+            <div class="section-title">
+              <h2>AI 病史摘要</h2>
+              <small>医生确认前不进入病历</small>
+            </div>
+            <div class="summary-block">
+              <div class="field">
+                <label>摘要</label>
+                <p>患者自述近 1 个月空腹血糖升高，上传报告显示 2026-05-22 糖化血红蛋白 7.8%。既往有 2 型糖尿病、高血压，长期用药信息来自处方照片，需复核剂量与依从性。</p>
+              </div>
+              <div class="field">
+                <label>过敏与风险</label>
+                <p>患者标记青霉素过敏。近期家庭血压有晨间偏高记录，无患者填报胸痛、呼吸困难或意识障碍。</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="work-card" style="margin-top:14px">
+            <div class="section-title">
+              <h2>指标趋势</h2>
+              <small>患者记录 + 报告识别</small>
+            </div>
+            <div class="table">
+              <div class="table-row header"><span>指标</span><span>最近</span><span>趋势</span></div>
+              <div class="table-row"><span>糖化血红蛋白</span><span>7.8%</span><span>上升</span></div>
+              <div class="table-row"><span>空腹血糖均值</span><span>8.1 mmol/L</span><span>上升</span></div>
+              <div class="table-row"><span>血压均值</span><span>138/86</span><span>轻度偏高</span></div>
+            </div>
+          </div>
+        </div>
+
+        <aside>
+          <div class="work-card">
+            <div class="section-title">
+              <h2>原始材料</h2>
+              <small>可追溯</small>
+            </div>
+            <div class="source-list">
+              <div class="source">
+                <strong>糖化血红蛋白报告 <span class="verified">已识别</span></strong>
+                <p>2026-05-22，仁安医院。AI 提取 6 项指标，医生可打开原图核对。</p>
+              </div>
+              <div class="source">
+                <strong>出院小结 <span class="verified">已识别</span></strong>
+                <p>2025-11-03，肺部感染住院。已提取诊断、出院用药、复查建议。</p>
+              </div>
+              <div class="source">
+                <strong>家庭血压血糖 <span class="verified">患者填报</span></strong>
+                <p>近 30 天共 26 条，系统标记 7 条晨间血压偏高。</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="work-card" style="margin-top:14px">
+            <div class="section-title">
+              <h2>安全提醒</h2>
+              <small>辅助分流</small>
+            </div>
+            <div class="alert-list">
+              <div class="alert">
+                <i class="dot"></i>
+                <div><strong>请复核用药剂量</strong><p>剂量来自处方照片与患者自填，系统不自动给出调整建议。</p></div>
+              </div>
+              <div class="alert">
+                <i class="dot red"></i>
+                <div><strong>青霉素过敏</strong><p>患者明确勾选，建议问诊时再次确认过敏表现。</p></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="work-card" style="margin-top:14px">
+            <div class="section-title">
+              <h2>医生操作</h2>
+              <small>需人工确认</small>
+            </div>
+            <div class="action-grid">
+              <button class="primary-button" type="button" data-toast="已标记为医生已阅">
+                <svg class="icon"><use href="#i-check"></use></svg>
+                已阅
+              </button>
+              <button class="ghost-button" type="button" data-toast="已请求患者补充肾功能报告">
+                <svg class="icon"><use href="#i-file"></use></svg>
+                补资料
+              </button>
+              <button class="ghost-button" type="button" data-toast="已加入 30 天随访计划">
+                <svg class="icon"><use href="#i-heart"></use></svg>
+                随访
+              </button>
+              <button class="ghost-button" type="button" data-toast="已生成本次阅览审计记录">
+                <svg class="icon"><use href="#i-shield"></use></svg>
+                留痕
+              </button>
+            </div>
+          </div>
+        </aside>
+        </section>
+
+        <section class="doctor-view" data-doctor-panel="growth">
+          <div>
+            <div class="work-card">
+              <div class="section-title">
+                <h2>复诊承接看板</h2>
+                <small>专病中心 · 本月</small>
+              </div>
+              <div class="mini-board">
+                <div class="doctor-metric"><span>应复诊患者</span><strong>286 人</strong></div>
+                <div class="doctor-metric"><span>已预约复诊</span><strong>164 人</strong></div>
+                <div class="doctor-metric"><span>检查闭环率</span><strong>71%</strong></div>
+              </div>
+            </div>
+
+            <div class="work-card" style="margin-top:14px">
+              <div class="section-title">
+                <h2>预约来源与承接</h2>
+                <small>患者端快捷入口</small>
+              </div>
+              <div class="table">
+                <div class="table-row header"><span>入口</span><span>预约量</span><span>承接场景</span></div>
+                <div class="table-row"><span>预约复诊</span><span>96 人</span><span>专病门诊</span></div>
+                <div class="table-row"><span>预约检查</span><span>42 人</span><span>肾功能/血糖</span></div>
+                <div class="table-row"><span>附近医院</span><span>31 人</span><span>社区慢病门诊</span></div>
+              </div>
+            </div>
+
+            <div class="work-card" style="margin-top:14px">
+              <div class="section-title">
+                <h2>患者流失预警</h2>
+                <small>按服务动作排序</small>
+              </div>
+              <div class="table">
+                <div class="table-row header"><span>人群</span><span>当前状态</span><span>建议动作</span></div>
+                <div class="table-row"><span>糖尿病复诊</span><span>48 人未预约</span><span>发送复查提醒</span></div>
+                <div class="table-row"><span>体检血糖异常</span><span>31 人未解读</span><span>引导专科咨询</span></div>
+                <div class="table-row"><span>出院后随访</span><span>12 人失联</span><span>护士电话确认</span></div>
+              </div>
+            </div>
+
+            <div class="work-card" style="margin-top:14px">
+              <div class="section-title">
+                <h2>检查检验闭环</h2>
+                <small>减少漏查漏回诊</small>
+              </div>
+              <div class="summary-block">
+                <div class="field">
+                  <label>未完成检查</label>
+                  <p>本周共有 39 名患者未完成医生建议的复查项目，系统可按科室模板发送提醒。</p>
+                </div>
+                <div class="field">
+                  <label>异常报告召回</label>
+                  <p>报告出现明显异常时，系统只做“建议复诊/线下就医”提醒，不直接解释诊断结论。</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <aside>
+            <div class="work-card">
+              <div class="section-title">
+                <h2>专病患者池</h2>
+                <small>可配置病种</small>
+              </div>
+              <div class="source-list">
+                <div class="source">
+                  <strong>糖尿病管理池 <span class="verified">1,248 人</span></strong>
+                  <p>按复诊周期、糖化血红蛋白、肾功能、用药依从性分层。</p>
+                </div>
+                <div class="source">
+                  <strong>高血压管理池 <span class="verified">936 人</span></strong>
+                  <p>重点跟踪晨间血压偏高、连续未测量和药物依从性。</p>
+                </div>
+                <div class="source">
+                  <strong>体检异常池 <span class="verified">312 人</span></strong>
+                  <p>把体检异常人群承接到专科复诊和健康管理服务。</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="work-card" style="margin-top:14px">
+              <div class="section-title">
+                <h2>服务转化指标</h2>
+                <small>院方运营</small>
+              </div>
+              <div class="metric-grid">
+                <div class="metric"><span>复诊承接率</span><strong>57%</strong><small>较上月 +12%</small></div>
+                <div class="metric"><span>报告回访率</span><strong>68%</strong><small>异常报告</small></div>
+                <div class="metric"><span>预约完成率</span><strong>64%</strong><small>快捷入口</small></div>
+                <div class="metric"><span>线上复诊入口</span><strong>38 人</strong><small>本月新增</small></div>
+              </div>
+            </div>
+
+            <div class="work-card" style="margin-top:14px">
+              <div class="section-title">
+                <h2>合规表达</h2>
+                <small>销售口径</small>
+              </div>
+              <div class="chips">
+                <span class="chip">连续照护</span>
+                <span class="chip">专病运营</span>
+                <span class="chip">复诊承接</span>
+                <span class="chip">检查闭环</span>
+                <span class="chip danger">不诱导诊疗</span>
+              </div>
+            </div>
+          </aside>
+        </section>
+
+        <section class="doctor-view" data-doctor-panel="follow">
+          <div>
+            <div class="work-card">
+              <div class="section-title">
+                <h2>慢病随访队列</h2>
+                <small>内分泌科 · 今日</small>
+              </div>
+              <div class="mini-board">
+                <div class="doctor-metric"><span>待处理异常</span><strong>12 人</strong></div>
+                <div class="doctor-metric"><span>已完成随访</span><strong>43 人</strong></div>
+                <div class="doctor-metric"><span>需复诊预约</span><strong>8 人</strong></div>
+              </div>
+            </div>
+
+            <div class="work-card" style="margin-top:14px">
+              <div class="section-title">
+                <h2>异常患者清单</h2>
+                <small>按风险排序</small>
+              </div>
+              <div class="table">
+                <div class="table-row header"><span>患者</span><span>异常</span><span>建议动作</span></div>
+                <div class="table-row"><span>周女士</span><span>血糖波动</span><span>复诊前补资料</span></div>
+                <div class="table-row"><span>刘先生</span><span>3 天未测血压</span><span>护士电话回访</span></div>
+                <div class="table-row"><span>陈女士</span><span>低血糖症状</span><span>医生优先确认</span></div>
+              </div>
+            </div>
+
+            <div class="work-card" style="margin-top:14px">
+              <div class="section-title">
+                <h2>随访话术预览</h2>
+                <small>院内审核模板</small>
+              </div>
+              <div class="summary-block">
+                <div class="field">
+                  <label>AI 可发送</label>
+                  <p>请补充最近一次肾功能报告或拍照上传检查单。若出现明显乏力、心悸、出汗等低血糖表现，请及时联系医生或线下就医。</p>
+                </div>
+                <div class="field">
+                  <label>必须人工确认</label>
+                  <p>药物剂量调整、是否停药、是否加药、诊断结论和处方均不由 AI 自动给出。</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <aside>
+            <div class="work-card">
+              <div class="section-title">
+                <h2>任务分配</h2>
+                <small>团队协同</small>
+              </div>
+              <div class="alert-list">
+                <div class="alert">
+                  <i class="dot"></i>
+                  <div><strong>护士组</strong><p>处理未上传资料、未完成问卷、指标缺失患者。</p></div>
+                </div>
+                <div class="alert">
+                  <i class="dot red"></i>
+                  <div><strong>医生组</strong><p>处理低血糖症状、异常升高、患者明确不适等高风险提醒。</p></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="work-card" style="margin-top:14px">
+              <div class="section-title">
+                <h2>科室看板</h2>
+                <small>试点指标</small>
+              </div>
+              <div class="metric-grid">
+                <div class="metric"><span>随访完成率</span><strong>78%</strong><small>较上周 +9%</small></div>
+                <div class="metric"><span>平均处理时长</span><strong>2.8h</strong><small>高风险提醒</small></div>
+              </div>
+            </div>
+          </aside>
+        </section>
+
+        <section class="doctor-view" data-doctor-panel="audit">
+          <div>
+            <div class="work-card">
+              <div class="section-title">
+                <h2>合规留痕</h2>
+                <small>患者授权链路</small>
+              </div>
+              <div class="audit-event">
+                <time>16:34<br>患者端</time>
+                <div><strong>患者生成 24 小时授权码</strong><p>授权范围：AI 摘要、原始材料、近期指标；患者可随时撤回。</p></div>
+              </div>
+              <div class="audit-event">
+                <time>16:35<br>医生端</time>
+                <div><strong>医生扫码查看摘要</strong><p>系统记录访问人、访问时间、授权码、查看范围。</p></div>
+              </div>
+              <div class="audit-event">
+                <time>16:37<br>工作台</time>
+                <div><strong>医生标记“已阅”</strong><p>AI 摘要不自动进入病历，需医生确认后才可引用。</p></div>
+              </div>
+            </div>
+
+            <div class="work-card" style="margin-top:14px">
+              <div class="section-title">
+                <h2>边界控制</h2>
+                <small>内置规则</small>
+              </div>
+              <div class="chips">
+                <span class="chip danger">不生成诊断</span>
+                <span class="chip danger">不调整药量</span>
+                <span class="chip danger">不自动开方</span>
+                <span class="chip">原始材料可追溯</span>
+                <span class="chip">患者授权可撤回</span>
+              </div>
+            </div>
+          </div>
+
+          <aside>
+            <div class="work-card">
+              <div class="section-title">
+                <h2>隐私权限</h2>
+                <small>最小必要</small>
+              </div>
+              <div class="consent">
+                <div class="switch-row">
+                  <div><strong>脱敏展示手机号</strong><span>医生端默认不显示完整联系方式。</span></div>
+                  <button class="toggle on" type="button" aria-label="脱敏展示手机号"><i></i></button>
+                </div>
+                <div class="switch-row">
+                  <div><strong>禁止导出原始材料</strong><span>试点阶段只允许在线查看。</span></div>
+                  <button class="toggle on" type="button" aria-label="禁止导出原始材料"><i></i></button>
+                </div>
+              </div>
+            </div>
+
+            <div class="work-card" style="margin-top:14px">
+              <div class="section-title">
+                <h2>审计摘要</h2>
+                <small>本次访问</small>
+              </div>
+              <div class="metric-grid">
+                <div class="metric"><span>查看材料</span><strong>6 份</strong><small>未导出</small></div>
+                <div class="metric"><span>授权剩余</span><strong>23h</strong><small>患者可撤回</small></div>
+              </div>
+            </div>
+          </aside>
+        </section>
+      </main>
+    </section>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const screens = document.querySelectorAll('.screen');
+    const navButtons = document.querySelectorAll('[data-go]');
+    const toast = document.querySelector('#toast');
+
+    function go(screenName) {
+      screens.forEach((screen) => {
+        screen.classList.toggle('active', screen.dataset.screen === screenName);
+      });
+      document.querySelectorAll('.nav-button').forEach((button) => {
+        button.classList.toggle('active', button.dataset.go === screenName);
+      });
+    }
+
+    function setDoctorView(viewName) {
+      document.querySelectorAll('[data-doctor-view]').forEach((item) => {
+        item.classList.toggle('active', item.dataset.doctorView === viewName);
+      });
+      document.querySelectorAll('[data-doctor-panel]').forEach((panel) => {
+        panel.classList.toggle('active', panel.dataset.doctorPanel === viewName);
+      });
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add('show');
+      window.clearTimeout(window.toastTimer);
+      window.toastTimer = window.setTimeout(() => toast.classList.remove('show'), 2200);
+    }
+
+    navButtons.forEach((button) => {
+      button.addEventListener('click', () => go(button.dataset.go));
+    });
+
+    document.querySelectorAll('.toggle').forEach((toggle) => {
+      toggle.addEventListener('click', () => toggle.classList.toggle('on'));
+    });
+
+    document.querySelectorAll('[data-toast]').forEach((button) => {
+      button.addEventListener('click', () => showToast(button.dataset.toast));
+    });
+
+    document.querySelectorAll('[data-doctor-view]').forEach((button) => {
+      button.addEventListener('click', () => {
+        setDoctorView(button.dataset.doctorView);
+        const labels = {
+          visit: '已切换到本次阅诊视图',
+          growth: '复诊运营视图：展示复诊承接、检查闭环和专病患者池',
+          follow: '慢病随访视图：显示待随访患者和异常指标',
+          audit: '合规留痕视图：显示授权、访问和医生确认记录'
+        };
+        showToast(labels[button.dataset.doctorView]);
+      });
+    });
+
+    document.querySelector('#addDoc').addEventListener('click', () => {
+      const row = document.createElement('div');
+      row.className = 'doc-row';
+      row.innerHTML = `
+        <div class="doc-icon"><svg class="icon"><use href="#i-file"></use></svg></div>
+        <div><strong>新上传的门诊处方</strong><span>正在识别用药名称与剂量</span></div>
+        <div class="progress"><i style="width:74%"></i></div>
+      `;
+      document.querySelector('#docList').prepend(row);
+      showToast('已添加模拟材料，AI 正在整理');
+    });
+
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('screen')) {
+      go(params.get('screen'));
+    }
+    if (params.has('doctor')) {
+      setDoctorView(params.get('doctor'));
+    }
+  </script>
+</body>
+</html>
